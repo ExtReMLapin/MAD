@@ -27,7 +27,7 @@ DIR     := build
 LIB     := ../lib
 BIN     := ../bin/linux
 AR      := ar -ruv
-LJ      := $(firstword $(wildcard ./mad $(LIB)/luajit/bin/luajit-rj))
+LJ      := $(firstword $(wildcard ./mad $(LIB)/luajit/bin/luajit))
 
 # depend
 DFLAGS  := -std=c99 -MM
