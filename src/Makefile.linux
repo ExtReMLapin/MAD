@@ -27,7 +27,7 @@ DIR     := build
 LIB     := ../lib
 BIN     := ../bin/linux
 AR      := ar -ruv
-LJ      := $(firstword $(wildcard ./mad $(LIB)/luajit/bin/luajit))
+LJ      := $(firstword $(wildcard ./mad $(LIB)/luajit/bin/luajit-rj))
 
 # depend
 DFLAGS  := -std=c99 -MM
@@ -79,7 +79,7 @@ OBJ     := $(addprefix $(DIR)/,$(OBJ))
 DOIT    := $(shell mkdir -p $(DIR) $(DIR)/help $(DIR)/sse)
 
 # files specific setup
-$(DIR)/mad_main.o: CFLAGS += -I$(LIB)/luajit/src
+$(DIR)/mad_main.o: CFLAGS += -I$(LIB)/luajit-rj/src
 $(DIR)/mad_vec.o:  CFLAGS += -I$(LIB)/fftw3/api -I$(LIB)/nfft3/include
 $(DIR)/mad_mat.o:  CFLAGS += -I$(LIB)/fftw3/api -I$(LIB)/nfft3/include
 $(DIR)/mad_opt.o:  CFLAGS += -I$(LIB)/nlopt2/api
