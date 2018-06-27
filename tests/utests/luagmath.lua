@@ -1878,7 +1878,7 @@ function TestLuaGmath:testPowOp2()
   for _,x in ipairs(values.num) do
   for _,y in ipairs(values.num) do
     if x > 1/709.78 and y > 1/709.78 and x < 709.78 and y < 709.78 then
-      assertAlmostEquals( log(x^y) - y*log(x), 0, max(abs(y*log(x)) * eps, eps) )
+      assertAlmostEquals( log(x^y) - y*log(x), 0, max(abs(y*log(x)) * eps, 2*eps) )
     end
   end end
 
