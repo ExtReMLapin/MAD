@@ -56,10 +56,10 @@ local mtable = object 'Mtable' {
 
 -- backup original methods and metamethods
 local mtable_mt = getmetatable(mtable)
-local var_raw, var_val = mtable.var_raw, mtable.var_val
-local raw_get, var_set = mtable.raw_get, mtable_mt.__newindex
-local parent, readonly = mtable.__par  , mtable.set_readonly
-local tbl_cpy = mtable.copy
+local var_raw, var_val, mth_get, raw_get in mtable
+local tbl_cpy, var_set = mtable.copy, mtable_mt.__newindex
+local readonly = mtable.set_readonly
+-- local parent = mtable.__par
 
 local function is_mtable (a)
   return is_object(a) and var_raw(a, _data) ~= nil
@@ -523,12 +523,16 @@ end
 
 -- read access precedence: row index, variable key, column key, row key.
 local function index_mm (tbl, key)
-  -- row index
-  if is_integer(key) then              -- see index_of_idx
+  if type(key) == 'number' then                              -- see index_of_idx
+    -- row index
     local data = var_raw(tbl,_data)
     key = reflect(key, data.nr)
     if key < 1 or key > data.nr then return nil end
     return setmetatable({[_idx]=key, [_data]=data, [_slf]=tbl}, row_mt)
+  elseif type(key) == 'string' then
+    -- method
+    local mth = mth_get(tbl, key)
+    if mth then return mth end
   end
   -- variable
   local var = var_raw(tbl, key)
@@ -1519,15 +1523,9 @@ mtable: set_methods {
   length_of    = length_of,
 
   foreach      = foreach,
-  select       = select,
-  deselect     = deselect,
   filter       = filter,
 
-  remove       = remove,
 --replace      = replace, ??
-  insert       = insert,
-  copy         = copy,
-  sort         = sort,
 
   cycle        = cycle,
   iter         = iter,
@@ -1537,9 +1535,6 @@ mtable: set_methods {
   write        = write,
   print        = print_,
 
-  -- readonly
-  set_readonly = set_readonly,
-
   -- ownership
   is_owner     = is_owner,
   is_view      = is_view,
@@ -1548,10 +1543,20 @@ mtable: set_methods {
   build_index  = build_index,
   check_index  = check_index,
 
-  -- disabled methods
+} :set_methods ({
+  -- overridden methods
+  copy         = copy,
+  sort         = sort,
+  insert       = insert,
+  remove       = remove,
+  select       = select,
+  deselect     = deselect,
+  set_readonly = set_readonly,
+
+  -- disable method
   is_selected := error("invalid mtable operation", 2),
 
-}: set_metamethods ({
+}, true) :set_metamethods ({
   __add        = add_row,
   __len        = len_mm,
   __index      = index_mm,
@@ -1569,10 +1574,7 @@ mtable: set_methods {
 MAD.typeid.is_mtable = is_mtable
 
 -- end ------------------------------------------------------------------------o
-return {
-  mtable = mtable,
-  -- __help = require 'madh_mtable',
-}
+return { mtable = mtable }
 
 --[[ 'High level table access is very slow!
 code A:

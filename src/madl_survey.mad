@@ -47,22 +47,22 @@ local E = element
 
 -- kind maps
 
-E. thin_element :set_methods { survey = \e,m ->  thinonly(e,m,1, nil  , thin) }
-E.drift_element :set_methods { survey = \e,m -> driftonly(e,m,1, drift, nil ) }
-E.thick_element :set_methods { survey = \e,m -> thickonly(e,m,1, thick, nil ) }
-E.extra_element :set_methods { survey = invalid }
+E. thin_element :set_functors { survey = \e,m ->  thinonly(e,m,1, nil  , thin) }
+E.drift_element :set_functors { survey = \e,m -> driftonly(e,m,1, drift, nil ) }
+E.thick_element :set_functors { survey = \e,m -> thickonly(e,m,1, thick, nil ) }
+E.extra_element :set_functors { survey = invalid }
 
 -- special maps
 
-E.patch     :set_methods { survey = invalid   }
-E.special   :set_methods { survey = fnone     }
-E.xrotation :set_methods { survey = xrotation }
-E.yrotation :set_methods { survey = yrotation }
-E.srotation :set_methods { survey = srotation }
-E.translate :set_methods { survey = translate }
-E.changeref :set_methods { survey = changeref }
-E.changedir :set_methods { survey = changedir }
-E.changenrj :set_methods { survey = changenrj }
+E.patch     :set_functors { survey = invalid   }
+E.special   :set_functors { survey = fnone     }
+E.xrotation :set_functors { survey = xrotation }
+E.yrotation :set_functors { survey = yrotation }
+E.srotation :set_functors { survey = srotation }
+E.translate :set_functors { survey = translate }
+E.changeref :set_functors { survey = changeref }
+E.changedir :set_functors { survey = changedir }
+E.changenrj :set_functors { survey = changenrj }
 
 -- survey mtable --------------------------------------------------------------o
 

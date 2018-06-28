@@ -167,32 +167,32 @@ local E = element
 
 -- kind maps
 
-E. thin_element :set_methods { track = track_thin  }
-E.drift_element :set_methods { track = track_drift }
-E.thick_element :set_methods { track = track_thick }
-E.extra_element :set_methods { track = invalid }
+E. thin_element :set_functors { track = track_thin  }
+E.drift_element :set_functors { track = track_drift }
+E.thick_element :set_functors { track = track_thick }
+E.extra_element :set_functors { track = invalid }
 
 -- specialized maps
 
--- E.sbend      :set_methods { track = track_sbend      } -- polar   , k0
--- E.combined   :set_methods { track = track_combined   } -- polar   , k0+k1
--- E.rbend      :set_methods { track = track_rbend      } -- straight, k0
--- E.quadrupole :set_methods { track = track_quadrupole } -- straight, k0+k1
--- E.solenoid   :set_methods { track = track_solenoid   } -- straight, ks+ksi
--- E.rfcavity   :set_methods { track = track_rfcavity   }
--- E.twcavity   :set_methods { track = track_twcavity   }
+-- E.sbend      :set_functors { track = track_sbend      } -- polar   , k0
+-- E.combined   :set_functors { track = track_combined   } -- polar   , k0+k1
+-- E.rbend      :set_functors { track = track_rbend      } -- straight, k0
+-- E.quadrupole :set_functors { track = track_quadrupole } -- straight, k0+k1
+-- E.solenoid   :set_functors { track = track_solenoid   } -- straight, ks+ksi
+-- E.rfcavity   :set_functors { track = track_rfcavity   }
+-- E.twcavity   :set_functors { track = track_twcavity   }
 
 -- special maps
 
-E.patch     :set_methods { track = invalid   }
-E.special   :set_methods { track = fnone     }
-E.xrotation :set_methods { track = xrotation }
-E.yrotation :set_methods { track = yrotation }
-E.srotation :set_methods { track = srotation }
-E.translate :set_methods { track = translate }
-E.changeref :set_methods { track = changeref }
-E.changedir :set_methods { track = changedir }
-E.changenrj :set_methods { track = changenrj }
+E.patch     :set_functors { track = invalid   }
+E.special   :set_functors { track = fnone     }
+E.xrotation :set_functors { track = xrotation }
+E.yrotation :set_functors { track = yrotation }
+E.srotation :set_functors { track = srotation }
+E.translate :set_functors { track = translate }
+E.changeref :set_functors { track = changeref }
+E.changedir :set_functors { track = changedir }
+E.changenrj :set_functors { track = changenrj }
 
 -- track mtable ---------------------------------------------------------------o
 

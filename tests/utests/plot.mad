@@ -1026,13 +1026,15 @@ end
 
 function TestPlotScript:testOutput ()
   local sid = gplot.sid
-  gplot:set_methods {
+  local prtf = gplot:mth_get('printf')
+  local wrt  = gplot:mth_get('write')
+  gplot:set_methods ({
     printf = \s,... =>
       local match = string.match(string.format(...), "system '(.+)'")
       if match then os.execute(match) end
     end,
     write  = \ error("call to write in gplot"),
-  }
+  }, true)
   local param = {
     sid      = 12,
     output   = 2,
@@ -1049,7 +1051,7 @@ function TestPlotScript:testOutput ()
   assertEquals(gplot.sid, 12)
   gplot:set_sid(sid)
 
-  gplot.printf, gplot.write = nil, nil
+  gplot:set_methods ({ printf = prtf, write = wrt }, true)
 end
 
 -- gplot regression test suite -------------------------------------------------o
