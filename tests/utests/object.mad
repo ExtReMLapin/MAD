@@ -1873,7 +1873,7 @@ function Test_object:testSlides()
   assertAlmostEquals( dt, 0.5, 1 )
 
   p1.getz = nil
-  p1:set_methods {getz = \s s.z}
+  p1:set_functors {getz = \s s.z}
 
   s=0
   t0 = os.clock()
