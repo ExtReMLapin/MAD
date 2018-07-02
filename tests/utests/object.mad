@@ -91,8 +91,8 @@ function TestObjectErr:testConstructor()
 
   local notraw_table = setmetatable({}, {})
 
-  local get = \s,k s[k]
-  local set = \s,k,v => s[k]=v end
+  local getv = \s,k s[k]
+  local setv = \s,k,v => s[k]=v end
   local msg = {
     "forbidden read access to incomplete object",
     "forbidden write access to incomplete object",
@@ -101,13 +101,13 @@ function TestObjectErr:testConstructor()
     "forbidden write access to 'object.nil' (readonly object, method or variable)",
   }
   local a
-  assertErrorMsgContains(msg[1], get, p2, a)      -- read
-  assertErrorMsgContains(msg[1], get, p00, a)     -- read child
+  assertErrorMsgContains(msg[1], getv, p2, a)      -- read
+  assertErrorMsgContains(msg[1], getv, p00, a)     -- read child
 
-  assertErrorMsgContains(msg[2], set, p2, a, '')  -- write
-  assertErrorMsgContains(msg[2], set, p00, a, '') -- write child
+  assertErrorMsgContains(msg[2], setv, p2, a, '')  -- write
+  assertErrorMsgContains(msg[2], setv, p00, a, '') -- write child
 
-  assertErrorMsgContains(msg[5], set, p3, a, '')  -- write
+  assertErrorMsgContains(msg[5], setv, p3, a, '')  -- write
 
   assertErrorMsgContains(msg[3], object, true)
   assertErrorMsgContains(msg[3], object, 1)
@@ -618,7 +618,7 @@ function TestObject:testIterators()
   assertEquals(#p0, 3)
   assertEquals(#p1, 2)
 
-  -- bypass function evaluation, v may be a function but loops get same length
+  -- bypass function evaluation, v may be a function but loops getv same length
   c=0 for k,v in  pairs(p0) do c=c+1 assertEquals(p0:var_raw(k), v) end
   assertEquals(c , 7)
   c=0 for k,v in  pairs(p1) do c=c+1 assertEquals(p1:var_raw(k), v) end
@@ -702,11 +702,7 @@ function TestObject:testSetVariables()
   assertTrue  ( is_table   (p1:getv(vs, true ).y) )
   assertTrue  ( is_table   (p1:getv(vs, true ).y) )
 
-  assertEquals( p1:setv({x=-2}        ).x, -2 )
-  assertEquals( p1:setv({x=-3}, true  ).x, -3 )
-  assertEquals( p1:setv({x=-4}, nil   ).x, -4 )
-  assertEquals( p1:setv({x=-4}, nil   ).x, -4 )
-  assertEquals( p1:setv({z=-5}, false ).z, -5 )
+  assertEquals( p1:setv({z=-5}, true ).z, -5 )
 
   p1:setv { z=5 }
   assertEquals( p1:getv(vs, true).z, 5 )
@@ -848,9 +844,10 @@ function TestObjectErr:testSetFunctor()
   local p2 = p0 'p2' {}:set_readonly()
   local msg = {
     "invalid argument #2 (mappable expected)",
-    "invalid key (function name expected)",
-    "invalid value (callable expected)",
-    "cannot override function"
+    "invalid key '1' (string expected)",
+    "invalid value for key 'x' (callable expected)",
+    "cannot override method 'x'",
+    "cannot override method 'y'",
   }
 
   for i=1,#objectErr+1 do
@@ -873,11 +870,18 @@ function TestObjectErr:testSetFunctor()
   assertErrorMsgContains(msg[3], p0.set_functors, p0, {x={}})
 
   assertErrorMsgContains(msg[4], p0.set_functors, p0, {x:=3}, false)
-  assertErrorMsgContains(msg[4], p1.set_functors, p1, {y:=3}, false)
+  assertErrorMsgContains(msg[5], p1.set_functors, p1, {y:=3}, false)
 end
 
 function TestObjectErr:testSetMethod()
--- TODO
+  local p0 = object 'p0' { x:=2 }
+  local p1 = p0 'p1' { } : set_methods { y:=2 }
+  local msg = {
+    "cannot set methods to 'p0' (unexpected class)",
+    "cannot override method 'y'",
+  }
+  assertErrorMsgContains(msg[1], p0.set_methods, p0, {x:=3}, false)
+  assertErrorMsgContains(msg[2], p1.set_methods, p1, {y:=3}, false)
 end
 
 function TestObject:testSetMetamethod()
@@ -922,9 +926,9 @@ function TestObjectErr:testSetMetamethod()
   local p2 = p0 'p2' { }:set_readonly()
   local msg = {
     "invalid argument #2 (mappable expected)",
-    "invalid metatable write access (unexpected class)",
-    "invalid key 'x' (metamethod expected)",
-    "invalid key 'y' (metamethod expected)",
+    "cannot set metamethods to 'p0' (unexpected class)",
+    "invalid key 'x' (string starting with __ expected)",
+    "invalid key 'y' (string starting with __ expected)",
     "cannot override metamethod"
   }
 
@@ -1531,7 +1535,7 @@ function TestObject:testEnvSelfRef()
   assertEquals(p0.p0)
 end
 
-function TestObject:testEnvReset()
+function TestObject:testEnvResetv()
   local p0 = object 'p0' { }
   local error = error
   local func = \ =>
@@ -1710,7 +1714,7 @@ function Test_object:testPrimes()
       s.primes[s.prime_count] = c
     end,
 
-    getPrimes = \s,n =>
+    getvPrimes = \s,n =>
       s.prime_count, s.primes = 3, { 1,2,3 }
       local c = 5
       while s.prime_count < n do
@@ -1724,7 +1728,7 @@ function Test_object:testPrimes()
 
   local p = Primes {}
   local t0 = os.clock()
-  p:getPrimes(2e5)
+  p:getvPrimes(2e5)
   local dt = os.clock() - t0
   assertEquals( p.primes[p.prime_count], 2750131 )
   assertAlmostEquals( dt , 0.5, 1 )
@@ -1861,24 +1865,24 @@ function Test_object:testSlides()
   assertEquals( s, 2000000000 )
   assertAlmostEquals( dt, 0.5, 1 )
 
-  p1.getz = \s s.z
+  p1.getvz = \s s.z
 
   s=0
   t0 = os.clock()
   for i=1,5e8 do
-    s = p1.getz + p2.getz + p3.getz + p4.getz + s
+    s = p1.getvz + p2.getvz + p3.getvz + p4.getvz + s
   end
   dt = os.clock() - t0
   assertEquals( s, 2000000000 )
   assertAlmostEquals( dt, 0.5, 1 )
 
-  p1.getz = nil
-  p1:set_functors {getz = \s s.z}
+  p1.getvz = nil
+  p1:set_functors {getvz = \s s.z}
 
   s=0
   t0 = os.clock()
   for i=1,5e8 do
-    s = p1:getz() + p2:getz() + p3:getz() + p4:getz() + s
+    s = p1:getvz() + p2:getvz() + p3:getvz() + p4:getvz() + s
   end
   dt = os.clock() - t0
   assertEquals( s, 2000000000 )

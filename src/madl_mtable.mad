@@ -39,12 +39,11 @@ local abs, min, max, ceil in math
 
 -- root object ----------------------------------------------------------------o
 
--- hidden keys.
-local _data = {}
+local _data = {} -- hidden key
 
 local origin = string.format("MAD %s %s %s", env.version, env.os, env.arch)
 
-local mtable = object 'Mtable' {
+local mtable = object 'mtable' {
   title='', type='', origin=origin, kind='mtable',
   header={'title', 'type', 'origin', 'date', 'time', 'refcol'},
   column=nil, refcol=nil, novector=nil, owner=nil, reserve=8,
@@ -419,7 +418,7 @@ end
 
 -- mtable metamethods ---------------------------------------------------------o
 
-local _slf, _idx, _col = {}, {}, {}
+local _slf, _idx, _col = {}, {}, {} -- hidden keys
 
 -- column generator (RO)
 local function gen_iter (s, i)
@@ -523,8 +522,8 @@ end
 
 -- read access precedence: row index, variable key, column key, row key.
 local function index_mm (tbl, key)
+  -- row index
   if type(key) == 'number' then                              -- see index_of_idx
-    -- row index
     local data = var_raw(tbl,_data)
     key = reflect(key, data.nr)
     if key < 1 or key > data.nr then return nil end
@@ -1490,7 +1489,7 @@ end
 
 -- members --------------------------------------------------------------------o
 
-mtable: set_methods {
+mtable :set_methods {
   -- nrow, ncol, ngen
   nrow         = len_mm,
   ncol         = \s -> var_raw(s, _data).nc,
@@ -1563,11 +1562,10 @@ mtable: set_methods {
   __newindex   = newindex_mm,
 -- __pairs     = pairs_mm , default from object
 -- __ipairs    = ipairs_mm, default from object
-
   __copy       = copy,
   __init       = mtbl_init,
 
-}, true): set_readonly()
+}, true) :set_readonly()
 
 -- env ------------------------------------------------------------------------o
 

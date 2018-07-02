@@ -25,7 +25,7 @@ local M = {}
 
 -- locals ---------------------------------------------------------------------o
 
-local warn, object                                               in MAD
+local warn                                                       in MAD
 local second, bind1st, bind2nd, bind2st                          in MAD.gfunc
 local lt, sub, ltrue, lfalse                                     in MAD.operator
 local sequence, marker, drift, changedir, flags                  in MAD.element
@@ -48,8 +48,7 @@ local readonly = sequence.set_readonly
 
 -- root object ----------------------------------------------------------------o
 
--- hidden key.
-local _data = {}
+local _data = {} -- hidden key
 
 -- special numerical value for elements positions.
 local uninitialized = -1e9
@@ -691,8 +690,8 @@ end
 
 -- read access precedence: element index, variable key, element name.
 local function index_mm (seq, key)
+  -- element index
   if type(key) == 'number' then                              -- see index_of_idx
-    -- element index
     local data = var_raw(seq,_data)
     return data[ reflect(key, data.ne) ]
   elseif type(key) == 'string' then
