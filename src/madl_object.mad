@@ -320,13 +320,13 @@ function MF:set_functors (tbl, override_) -- default: override = true
   return self
 end
 
-function MF:set_methods (tbl, override_, strict_)
+function MF:set_methods (tbl, override_)
   assert(is_object(self)    , "invalid argument #1 (object expected)")
   assert(is_mappable(tbl)   , "invalid argument #2 (mappable expected)")
   if freadonly(self) then
     errorf("forbidden write access to readonly object '%s'", name(self))
   end
-  if fclass(self) and override_ == false then
+  if fclass(self) then
     errorf("cannot set methods to '%s' (unexpected class)", name(self))
   end
   local sm, pm = self.__mth , parent(self).__mth or MF
