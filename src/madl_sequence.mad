@@ -769,25 +769,26 @@ local function range_of (seq, rng_, ref_, dir_)
     elseif dir == -1 then return #seq, 1
     else error("invalid range direction (1 or -1 expected)")
     end
-  elseif is_integer(rng_) then
-    start, istart = rng_, index_of_idx(seq, rng_)
+  elseif is_number(rng_) then
+    start, istart = rng_, index_of_num(seq, rng_, dir_)
     stop , istop  = start, istart
   elseif is_string(rng_) then
     local s1, i2 = strsplit(rng_, "/")
-    local s2 = i2 > 0 and strtrim(rng_, i2+1) or nil
+    local s2 = i2 == 0 and s1 or strtrim(rng_, i2+1)
     doidx, start, stop = true, s1, s2
   elseif is_range(rng_) then
     doidx, start, stop, step = true, rng_:ranges()
     dir_ = dir_ or step
   elseif is_table(rng_) then
-    start, stop, ref_, dir_ = rng_[1], rng_[2], ref_ or rng_[3], dir_ or rng_[4]
+    start, stop, ref_, dir_ = rng_[1], rng_[2] or rng_[1], ref_ or rng_[3],
+                                                           dir_ or rng_[4]
     if ref_ == 'idx' then
       assert(is_integer(start) and is_integer(stop),
              "invalid argument #2 (range of integers expected)")
       istart, istop = index_of_idx(seq, start), index_of_idx(seq, stop)
     else doidx = true
     end
-  else error("invalid argument #2 (integer, string, table or range expected)")
+  else error("invalid argument #2 (number, string, table or range expected)")
   end
   local sstart, sstop
   if doidx then

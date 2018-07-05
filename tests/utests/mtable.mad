@@ -113,6 +113,7 @@ local function assertFiles (name)
   local run  = assert(io.open(rundir(name), "r"))
   local reftbl, sref = strsplitall(ref:read("*all"), " \n,:;[]")
   local runtbl, srun = strsplitall(run:read("*all"), " \n,:;[]")
+  ref:close(); run:close()
   assertEquals(srun, sref)
   for i=1,sref do
     reftbl[i] = tonumber(reftbl[i]) or reftbl[i]
@@ -660,8 +661,10 @@ function TestMTable:testRangeOfStringInt()
   local tbl1, tbl2, tbl3 = getIdxTbl()
   for i,tbl in ipairs{tbl1, tbl2, tbl3} do
     assertEquals(table.pack(tbl:range_of(" 1/ 1")), {1,1, n=2})
+    assertEquals(table.pack(tbl:range_of(" 1   ")), {1,1, n=2})
     assertEquals(table.pack(tbl:range_of(" 2/ 2")), {2,2, n=2})
     assertEquals(table.pack(tbl:range_of("-1/ 1")), {4,1, n=2})
+    assertEquals(table.pack(tbl:range_of("-1   ")), {4,4, n=2})
     assertEquals(table.pack(tbl:range_of("-1/ 4")), {4,4, n=2})
     assertEquals(table.pack(tbl:range_of(" 1/-1")), {1,4, n=2})
     assertEquals(table.pack(tbl:range_of(" 4/-1")), {4,4, n=2})
@@ -672,19 +675,24 @@ function TestMTable:testRangeOfStringPositive()
   local _, tbl2, tbl3 = getIdxTbl()
   for i,tbl in ipairs{tbl2, tbl3} do
     assertEquals(table.pack(tbl:range_of("name1    /name1    "   )), {1,1, n=2})
+    assertEquals(table.pack(tbl:range_of("name1              "   )), {1,1, n=2})
     assertEquals(table.pack(tbl:range_of("name1    /name2    "   )), {1,2, n=2})
     assertEquals(table.pack(tbl:range_of("name1[2] /name1[2] "   )), {3,3, n=2})
+    assertEquals(table.pack(tbl:range_of("name1[2]           "   )), {3,3, n=2})
     assertEquals(table.pack(tbl:range_of("name1[-2]/name1[-2]"   )), {3,3, n=2})
+    assertEquals(table.pack(tbl:range_of("name1[-2]          "   )), {3,3, n=2})
     assertEquals(table.pack(tbl:range_of("name1[1] /name1[3] "   )), {1,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1[-3]/name1[-1]"   )), {1,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1[2] /name1[3] "   )), {3,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1[-2]/name1[-1]"   )), {3,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1[1] /name1[-1]"   )), {1,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1{1} /name1{2} ", 2)), {3,4, n=2})
+    assertEquals(table.pack(tbl:range_of("name1{1}           ", 2)), {3,3, n=2})
     assertEquals(table.pack(tbl:range_of("name1{1} /name1{2} ",-3)), {3,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1{1} /name1{2} ", 3)), {3,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1{1} /name1{2} ",-2)), {3,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1{-1}/name1{1} ", 3)), {3,3, n=2})
+    assertEquals(table.pack(tbl:range_of("name1{-1}          ", 3)), {3,3, n=2})
     assertEquals(table.pack(tbl:range_of("name1{-1}/name1{1} ",-2)), {3,3, n=2})
     assertEquals(table.pack(tbl:range_of("name1{-2}/name1{-1}", 4)), {3,4, n=2})
     assertEquals(table.pack(tbl:range_of("name1{-2}/name1{-1}",-1)), {3,4, n=2})
@@ -739,22 +747,25 @@ function TestMTable:testRangeOfStringInvalid()
   local msg = {
     "invalid range start",
     "invalid range stop",
-    "invalid argument #2 (integer or string expected)",
   }
   for i,tbl in ipairs{tbl2, tbl3} do
-    assertErrorMsgContains(msg[3], range_of, tbl, "                   "   )
+    assertErrorMsgContains(msg[1], range_of, tbl, "                   "   )
     assertErrorMsgContains(msg[1], range_of, tbl, "         /         "   )
     assertErrorMsgContains(msg[2], range_of, tbl, "name1    /         "   )
     assertErrorMsgContains(msg[1], range_of, tbl, "name100  /name1    "   )
+    assertErrorMsgContains(msg[1], range_of, tbl, "name100            "   )
     assertErrorMsgContains(msg[2], range_of, tbl, "name1    /name200  "   )
     assertErrorMsgContains(msg[1], range_of, tbl, "name100  /name200  "   )
     assertErrorMsgContains(msg[1], range_of, tbl, "name1[-4]/name1[3] "   )
+    assertErrorMsgContains(msg[1], range_of, tbl, "name1[-4]          "   )
     assertErrorMsgContains(msg[2], range_of, tbl, "name1[1] /name1[4] "   )
     assertErrorMsgContains(msg[1], range_of, tbl, "name1[4] /name1[3] "   )
     assertErrorMsgContains(msg[2], range_of, tbl, "name1[1] /name1[-4]"   )
     assertErrorMsgContains(msg[1], range_of, tbl, "name1{-2}/name1{1} ", 2)
+    assertErrorMsgContains(msg[1], range_of, tbl, "name1{-2}          ", 2)
     assertErrorMsgContains(msg[2], range_of, tbl, "name1{-1}/name1{3} ", 2)
     assertErrorMsgContains(msg[1], range_of, tbl, "name1{3} /name1{1} ", 2)
+    assertErrorMsgContains(msg[1], range_of, tbl, "name1{3}           ", 2)
     assertErrorMsgContains(msg[2], range_of, tbl, "name1{-1}/name1{-3}", 2)
   end
 end
@@ -769,9 +780,11 @@ function TestMTable:testRangeOfTableInt()
   end
   for i, tbl in ipairs{tbl1, tbl2, tbl3} do
     assertEquals(table.pack(tbl:range_of({1 , 1})), {1,1, n=2})
+    assertEquals(table.pack(tbl:range_of({1    })), {1,1, n=2})
     assertEquals(table.pack(tbl:range_of({1 ,-1})), {1,4, n=2})
     assertEquals(table.pack(tbl:range_of({2 , 2})), {2,2, n=2})
     assertEquals(table.pack(tbl:range_of({-1, 1})), {4,1, n=2})
+    assertEquals(table.pack(tbl:range_of({-1   })), {4,4, n=2})
     assertEquals(table.pack(tbl:range_of({-1, 4})), {4,4, n=2})
     assertEquals(table.pack(tbl:range_of({4 ,-1})), {4,4, n=2})
   end
@@ -782,9 +795,11 @@ function TestMTable:testRangeOfTableStringInt()
   local tpack         = table.pack
   for i,tbl in ipairs{tbl1, tbl2, tbl3} do
     assertEquals(tpack(tbl:range_of({" 1", " 1"})), {1,1, n=2})
+    assertEquals(tpack(tbl:range_of({" 1"      })), {1,1, n=2})
     assertEquals(tpack(tbl:range_of({" 1", "-1"})), {1,4, n=2})
     assertEquals(tpack(tbl:range_of({" 2", " 2"})), {2,2, n=2})
     assertEquals(tpack(tbl:range_of({"-1", " 1"})), {4,1, n=2})
+    assertEquals(tpack(tbl:range_of({"-1"      })), {4,4, n=2})
     assertEquals(tpack(tbl:range_of({"-1", " 4"})), {4,4, n=2})
     assertEquals(tpack(tbl:range_of({" 4", "-1"})), {4,4, n=2})
     assertEquals(tpack(tbl:range_of({" 1", " 1"})), {1,1, n=2})
@@ -801,9 +816,12 @@ function TestMTable:testRangeOfTableStringPositiveAbsolute()
   local tpack         = table.pack
   for i,tbl in ipairs{tbl2, tbl3} do
     assertEquals(tpack(tbl:range_of({"name1    ", "name1    "})), {1,1, n=2})
+    assertEquals(tpack(tbl:range_of({"name1    "             })), {1,1, n=2})
     assertEquals(tpack(tbl:range_of({"name1    ", "name2    "})), {1,2, n=2})
     assertEquals(tpack(tbl:range_of({"name1[2] ", "name1[2] "})), {3,3, n=2})
+    assertEquals(tpack(tbl:range_of({"name1[2] "             })), {3,3, n=2})
     assertEquals(tpack(tbl:range_of({"name1[-2]", "name1[-2]"})), {3,3, n=2})
+    assertEquals(tpack(tbl:range_of({"name1[-2]"             })), {3,3, n=2})
     assertEquals(tpack(tbl:range_of({"name1[1] ", "name1[3] "})), {1,4, n=2})
     assertEquals(tpack(tbl:range_of({"name1[-3]", "name1[-1]"})), {1,4, n=2})
     assertEquals(tpack(tbl:range_of({"name1[2] ", "name1[3] "})), {3,4, n=2})
@@ -817,10 +835,12 @@ function TestMTable:testRangeOfTableStringPositiveRelative()
   local tpack         = table.pack
   for i,tbl in ipairs{tbl2, tbl3} do
     assertEquals(tpack(tbl:range_of({"name1{1} ", "name1{2} "}, 2)), {3,4, n=2})
+    assertEquals(tpack(tbl:range_of({"name1{1} "             }, 2)), {3,3, n=2})
     assertEquals(tpack(tbl:range_of({"name1{1} ", "name1{2} "},-3)), {3,4, n=2})
     assertEquals(tpack(tbl:range_of({"name1{1} ", "name1{2} "}, 3)), {3,4, n=2})
     assertEquals(tpack(tbl:range_of({"name1{1} ", "name1{2} "},-2)), {3,4, n=2})
     assertEquals(tpack(tbl:range_of({"name1{-1}", "name1{1} "}, 3)), {3,3, n=2})
+    assertEquals(tpack(tbl:range_of({"name1{-1}"             }, 3)), {3,3, n=2})
     assertEquals(tpack(tbl:range_of({"name1{-1}", "name1{1} "},-2)), {3,3, n=2})
     assertEquals(tpack(tbl:range_of({"name1{-2}", "name1{-1}"}, 4)), {3,4, n=2})
     assertEquals(tpack(tbl:range_of({"name1{-2}", "name1{-1}"},-1)), {3,4, n=2})
@@ -928,21 +948,27 @@ function TestMTable:testRangeOfTableInvalid()
   }
   for i,tbl in ipairs{tbl2, tbl3} do
     assertErrorMsgContains(msg[1], range_of, tbl, { 0         , 2          }   )
+    assertErrorMsgContains(msg[1], range_of, tbl, { 0                      }   )
     assertErrorMsgContains(msg[2], range_of, tbl, { 1         , 5          }   )
     assertErrorMsgContains(msg[1], range_of, tbl, {-100       , 2          }   )
+    assertErrorMsgContains(msg[1], range_of, tbl, {-100                    }   )
     assertErrorMsgContains(msg[2], range_of, tbl, { 1         , 100        }   )
     assertErrorMsgContains(msg[3], range_of, tbl, { 1.5       , 2          }   )
     assertErrorMsgContains(msg[3], range_of, tbl, { 1         , 2.5        }   )
-    assertErrorMsgContains(msg[1], range_of, tbl, {"         ", "         "}   )
+    assertErrorMsgContains(msg[1], range_of, tbl, {"         "             }   )
     assertErrorMsgContains(msg[2], range_of, tbl, {"name1    ", "         "}   )
     assertErrorMsgContains(msg[1], range_of, tbl, {"name100  ", "name1    "}   )
+    assertErrorMsgContains(msg[1], range_of, tbl, {"name100  "             }   )
     assertErrorMsgContains(msg[2], range_of, tbl, {"name1    ", "name200  "}   )
     assertErrorMsgContains(msg[1], range_of, tbl, {"name100  ", "name200  "}   )
     assertErrorMsgContains(msg[1], range_of, tbl, {"name1[-4]", "name1[3] "}   )
+    assertErrorMsgContains(msg[1], range_of, tbl, {"name1[-4]"             }   )
     assertErrorMsgContains(msg[2], range_of, tbl, {"name1[1] ", "name1[4] "}   )
     assertErrorMsgContains(msg[1], range_of, tbl, {"name1[4] ", "name1[3] "}   )
+    assertErrorMsgContains(msg[1], range_of, tbl, {"name1[4] "             }   )
     assertErrorMsgContains(msg[2], range_of, tbl, {"name1[1] ", "name1[-4]"}   )
     assertErrorMsgContains(msg[1], range_of, tbl, {"name1{-2}", "name1{1} "}, 2)
+    assertErrorMsgContains(msg[1], range_of, tbl, {"name1{-2}"             }, 2)
     assertErrorMsgContains(msg[2], range_of, tbl, {"name1{-1}", "name1{3} "}, 2)
     assertErrorMsgContains(msg[1], range_of, tbl, {"name1{3} ", "name1{1} "}, 2)
     assertErrorMsgContains(msg[2], range_of, tbl, {"name1{-1}", "name1{-3}"}, 2)
@@ -2573,6 +2599,19 @@ function TestMTable:testBuildIndexInvalid()
   assertErrorMsgContains(msg[1], mtable.build_index, tbl, "nonecol")
 end
 
+function TestMTable:testClrDat()
+  local tbl = mtable "tbl" { "x", "y", "z" }
+  for i=1,10 do
+    tbl:addrow{i, 2*i, "string"..i}
+  end
+  assertEquals(#tbl, 10)
+  tbl:clrdat()
+  assertEquals(#tbl,  0)
+  assertTrue (is_vector(tbl:getcol(1)))
+  assertTrue (is_vector(tbl:getcol(2)))
+  assertFalse(is_vector(tbl:getcol(3)))
+end
+
 function TestMTable:testWriteExtensions()
   local tbl = mtable "tbl1" { "x", "y", "z" }
   tbl.time, tbl.date, tbl.origin = "", "", ""
@@ -2672,6 +2711,7 @@ function TestMTable:testWriteStdout()
 
   testWrite(tbl, fname, {"x", "y"}, {"var", "type"})
 
+  io.stdout:close()
   io.stdout    = stdout
 end
 
@@ -2683,6 +2723,7 @@ function TestMTable:testWriteStream()
 
   tbl.time, tbl.date, tbl.origin = "", "", ""
   testWrite(tbl, fname, stream, {"x", "y"})
+  stream:close()
 end
 
 function TestMTable:testWriteRightShift()
@@ -2709,6 +2750,7 @@ function TestMTable:testWriteNamedArgs()
 
   testWrite(tbl, "tbl-namedargs1.tfs", args1)
   testWrite(tbl, "tbl-namedargs2.tfs", args2)
+  args2.file:close()
 end
 
 function TestMTable:testPrint()
@@ -2725,6 +2767,7 @@ function TestMTable:testPrint()
   tbl:print({"x", "y"}, {"var", "type"})
   assertFiles(fname)
 
+  io.stdout:close()
   io.stdout    = stdout
 end
 
@@ -2799,15 +2842,18 @@ function TestMTable:testReadStdin()
   assertEquals(tbl.var, 42)
   assertVecEquals(tbl:getcol(1), {1, 1, 1, 1})
   assertVecEquals(tbl:getcol(2), {2, 2, 2, 2})
+
+  io.stdin:close()
   io.stdin = stdin
 end
 
 function TestMTable:testReadStream()
   local stream = assert(io.open(refdir("tbl-stream.tfs"), 'r'))
-  local tbl    = mtable:read(refdir("tbl-stream.tfs"))
+  local tbl    = mtable:read(stream)
   local ref    = getIdxTbl()
 
   for i=1,2 do assertEquals(tbl:getcol(i), ref:getcol(i)) end
+  stream:close()
 end
 
 function TestMTable:testReadInvalid()
