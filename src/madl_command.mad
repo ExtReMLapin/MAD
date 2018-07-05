@@ -29,15 +29,16 @@ local assertf                                  in MAD.utility
 
 -- root object ----------------------------------------------------------------o
 
-local _cmd = {}
-
-local command = object 'command' { kind='command', [_cmd]=true }
-
-local function is_command (a)
-  return is_table(a) and not is_nil(a[_cmd])
-end
+local command = object 'command' { kind='command' }
 
 -- implementation -------------------------------------------------------------o
+
+local _id = {}
+
+local function is_command (a)
+  local mt = getmetatable(a)
+  return mt ~= nil and mt.__cmd == _id
+end
 
 local function exec (a)
   local exec = a:raw_get'exec'
@@ -52,30 +53,8 @@ local function exec (a)
   return rawget(getmetatable(a), '__exec')(a)
 end
 
--- local function add_specialization (cmd, def, tbl_)
---   if is_string(def) and is_table(tbl_) then
---     def, tbl_ = {def=tbl_}, nil        -- left shift
---   end
---   assert(is_command(cmd), "invalid argument #1 (command expected)")
---   assert(is_table(def)  , "invalid argument #2 (command specialization expected")
---
---   local status = cmd:is_readonly()
---   cmd:set_readonly(false)
---   for k,v in pairs(def) do
---     assertf(is_nil(cmd[k]), "invalid key for specialization ('%s' already in use)", k)
---     assert (is_nil(v.exec), "invalid specialization ('exec' already in use)")
---     v.exec = false
---     cmd[k] = cmd(k, v) -- attach specialized child
---   end
---   cmd:set_readonly(status)
---   return cmd
--- end
---
--- command :set_methods {
---   add_specialization = add_specialization,
--- }
-
 command :set_metamethods {
+  __cmd   = _id,
   __init  = \s -> exec(s),
   __exec := error("invalid command (missing exec or __exec definition)", 2),
 } :set_readonly()

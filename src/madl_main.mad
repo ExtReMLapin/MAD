@@ -25,17 +25,28 @@ local M = {}
 
 -- modules --------------------------------------------------------------------o
 
--- list of modules to import in MAD, order matters!
+-- list of modules to import in MAD
+
 local modules = {
-  -- Lua modules: Strict, LPEG, LuaFun, LuaFileSystem, LuaUnit
+  -- Lua modules --
+
+  -- Strict, LPEG, LuaFun, LuaFileSystem, LuaUnit
   'strict', 'regex', 'lfun', 'lfs', -- 'utest',
-  -- MAD modules, order matters!
-  --[[cmad,]] 'typeid', --[[main,]] 'constant', 'gfunc', 'gmath', 'gutil',
-  'range', 'complex', 'matrix', 'mono', 'gtpsa', 'mflow',
+
+  -- MAD modules (order matters!) --
+
+  -- utilities
+  'typeid', 'constant', 'gfunc', 'gutil',
+  -- maths
+  'gmath', 'range', 'complex', 'matrix', 'mono', 'gtpsa',
+  -- objects
   'object', 'beam', 'element', 'sequence', 'mtable',
-  'geomap', 'dynmap', 'symint',
-  'command', 'survey', 'track',
-  'madx', 'plot',
+  -- physics
+  'gphys', 'damap', 'geomap', 'dynmap', 'symint',
+  -- commands
+  'command', 'survey', 'track', 'cofind', 'twiss', 'plot',
+  -- environments
+  'madx',
 }
 
 -- list of global variables to cleanup after import
@@ -55,11 +66,10 @@ local not_iterable                                               in concept
 
 -- implementation -------------------------------------------------------------o
 
--- hidden key.
-local _hlp = {}
+local _hlp = {} -- hidden key.
 
-M[_hlp]   = {}  -- backup for help
-M._C      = _C  -- C symbol access
+M[_hlp] = {}  -- backup for help
+M._C    = _C  -- C symbol access
 
 -- env
 
@@ -146,7 +156,7 @@ local function loadreq (modnam)
 
   if not status then
     if not string.find(mod, "module '"..modnam.."' not found:") then
-      error(mod)
+      error('<'..mod .. '> while loading module ' .. modnam)
     end
     mod, err = nil, mod
   end
@@ -345,10 +355,7 @@ end
 MAD = wprotect(setmetatable(M, {__tostring := "MAD"}))
 
 -- import MAD as a self reference
-MAD:import {
-  MAD    = MAD,
---  __help = require 'madh_main',
-}
+MAD:import { MAD = MAD }
 
 -- load modules
 for _,m in ipairs(modules) do MAD:import(m) end
@@ -412,22 +419,22 @@ local _M_env = {
   '_C', 'MAD', 'MADX', 'check_globals',
   'atexit',
   'beam',
-  'cmapflow', 'cmatrix', 'command', 'complex', 'constant', 'ctpsa', 'cvector',
-  'dynmap',
+  'cdamap', 'cmatrix', 'cofind', 'command', 'complex', 'constant', 'ctpsa', 'cvector',
+  'damap', 'dynmap',
   'element', 'env', 'export',
   'filesys', 'fun',
-  'geomap', 'gfunc', 'gmath', 'gplot', 'gtpsad',
+  'geomap', 'gfunc', 'gmath', 'gphys', 'gplot', 'gtpsad',
   'help',
   'import',
   'linspace', 'logrange', 'logspace',
-  'matrix', 'mapflow', 'monomial', 'mtable',
+  'matrix', 'monomial', 'mtable',
   'nlogrange', 'nrange',
   'object', 'operator', 'option',
   'plot',
   'range', 'regex',
   'sequence', 'show', 'strict', 'survey', 'symint',
   'toboolean', 'tocomplex', 'torange', 'tostring', 'totable',
-  'tpsa', 'trace', 'track', 'typeid',
+  'tpsa', 'trace', 'track', 'twiss', 'typeid',
   'unstrict', 'utest', 'utility',
   'vector',
   'warn',

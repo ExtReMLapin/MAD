@@ -66,8 +66,6 @@ E.changenrj :set_methods { survey = changenrj }
 
 -- survey mtable --------------------------------------------------------------o
 
-local _var = {}
-
 local function save_all (elm, mflw, lw_)
   local name, kind, l, angle, tilt in elm
 
@@ -82,8 +80,14 @@ local function save_all (elm, mflw, lw_)
   atfill(elm, mflw, lw)
 end
 
-local function save_elm (elm, mflw, lw_)
-  if not is_implicit(elm) then save_all(elm, mflw, lw_) end
+local function save_imp (elm, mflw, lw_)
+  if is_implicit(elm) then return end
+  save_all(elm, mflw, lw_)
+end
+
+local function save_obs (elm, mflw, lw_)
+  if not is_observed(elm) then return end
+  save_all(elm, mflw, lw_)
 end
 
 local function make_mtable (self)
@@ -102,9 +106,11 @@ end
 
 -- survey mflow ---------------------------------------------------------------o
 
+local _id = {} -- identity
+
 local function make_mflow (self)
   if self.mflow then
-    assert(is_table(self.mflow[_var]), "invalid mflow (survey mflow expected)")
+    assert(self.mflow.__surv == _id, "invalid mflow (survey mflow expected)")
     return self.mflow
   end
 
@@ -117,17 +123,20 @@ local function make_mflow (self)
   local iter, state, init = sequ:siter(range, nturn, sdir)
 
   -- build mtable
-  local save, nofill, implicit in self
+  local save, nofill, observe, implicit in self
   assert(is_boolean(save) or is_callable(save),
                                "invalid save (boolean or callable expected)")
   assert(is_boolean(nofill)  , "invalid nofill (boolean expected)")
+  assert(is_boolean(observe) , "invalid observe (boolean expected)")
   assert(is_boolean(implicit), "invalid implicit (boolean expected)")
 
   -- saving data
   local mtbl, fill
   if save then
     mtbl = make_mtable(self)
-    fill = is_callable(save) and save or implicit and save_all or save_elm
+    fill = is_callable(save) and save     or -- precedence matters!
+           observe  == true  and save_obs or
+           implicit == false and save_imp or save_all
   else
     fill = fnone
   end
@@ -197,7 +206,8 @@ local function make_mflow (self)
     U=vector(3),                       -- temporary vector for calculations
 
     -- internal vars for survey
-    [_var]={iter=iter, state=state},   -- iterator and iteraror state
+    __survitr={iter=iter, state=state},   -- iterator and iteraror state
+    __surv=_id,
   }
 
   return mflw
@@ -215,7 +225,7 @@ local function exec (self)
 
   -- retrieve information
   local s0, sdir, idx, mtbl, fill, nofill, atentry, atexit in mflw
-  local iter, state in mflw[_var]
+  local iter, state in mflw.__survitr
 
   -- disable fill locally
   if nofill ~= false then fill = fnone end
@@ -237,33 +247,42 @@ local function exec (self)
   return mtbl, mflw
 end
 
-local survey = command 'Survey' {
-  sequence=nil,   -- sequence (required)                                  (mflw)
-  range=nil,      -- range of tracking                                    (iter)
-  title=nil,      -- title of mtable                                      (mtbl)
-  sdir=1,         -- s-direction of tracking (1 or -1)                    (mflw)
+local _na -- not applicable (see track or twiss)
 
-  s0=0,           -- initial s                                            (mflw)
-  X0={0,0,0},     -- initial coordinates x, y, z                          (mflw)
-  A0={0,0,0},     -- initial angles theta, phi, psi                       (mflw)
+local survey = command 'survey' {
+  beam=_na,         -- N/A                                                (mflw)
+  sequence=nil,     -- sequence (required)                                (mflw)
+  range=nil,        -- range of tracking                                  (iter)
+  title=nil,        -- title of mtable                                    (mtbl)
+  sdir=1,           -- s-direction of tracking (1 or -1)                  (mflw)
 
-  nturn=1,        -- number of turns                                      (iter)
-  nstep=-1,       -- number of elements to track                          (iter)
-  nslice=1,       -- number of slice for each element                     (mflw)
+  s0=0,             -- initial s                                          (mflw)
+  X0={0,0,0},       -- initial coordinates x, y, z                        (mflw)
+  A0={0,0,0},       -- initial angles theta, phi, psi                     (mflw)
 
-  save=true,      -- create mtable and set fill to save data              (mtbl)
-  nofill=false,   -- disable filling at the end of an element             (mflw)
-  implicit=true,  -- save also implicit elements                          (mtbl)
+  mapdef=_na,       -- N/A                                                (mflw)
+  mapsave=false,    -- save W in the mtable                               (mflw)
 
-  atentry=nil,    -- action to call when entering an element              (mflw)
-  atslice=nil,    -- action to call after each element slices             (mflw)
-  atexit=nil,     -- action to call when exiting an element               (mflw)
-  atfill=nil,     -- action to call when filling a mtable row             (mflw)
+  nturn=1,          -- number of turns                                    (iter)
+  nstep=-1,         -- number of elements to track                        (iter)
+  nslice=1,         -- number of slice for each element                   (mflw)
+  method=_na,       -- N/A                                                (mflw)
+  totalpath=_na,    -- N/A                                                (mflw)
+
+  save=true,        -- create mtable and set fill to save data            (mtbl)
+  nofill=false,     -- disable filling at the end of an element           (mflw)
+  observe=false,    -- save only observed elements                        (mtbl)
+  implicit=true,    -- save also implicit elements                        (mtbl)
+
+  atentry=nil,      -- action to call when entering an element            (mflw)
+  atslice=nil,      -- action to call after each element slices           (mflw)
+  atexit=nil,       -- action to call when exiting an element             (mflw)
+  atfill=nil,       -- action to call when filling a mtable row           (mflw)
 
   mflow=nil,      -- current mflow, exclusive with other attributes except nstep
 
-  exec=exec,      -- command to execute upon children creation
-} :set_readonly() -- reference survey command is readonly
+  exec=exec,        -- command to execute upon children creation
+} :set_readonly()   -- reference survey command is readonly
 
 -- end ------------------------------------------------------------------------o
 return { survey = survey }

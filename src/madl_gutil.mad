@@ -26,7 +26,7 @@
 local ffi = require 'ffi'
 local bit = require 'bit'
 
-local tostring = tostring
+local type, tostring = type, tostring
 
 local option, fun, _C in MAD
 
@@ -36,10 +36,11 @@ local abs, min, max          in math
 
 local is_nil, is_boolean, is_number, is_string, is_table, is_emptytable,
       is_value, is_integer, is_iterable, is_mappable, is_callable,
-      is_stringable, is_tablable, is_copiable, is_sameable, is_complex,
-      get_metatable, get_metamethod, wprotect, set_concept, concept in MAD.typeid
+      is_stringable, is_tablable, is_copiable, is_sameable,
+      get_metatable, get_metamethod, wprotect,
+      set_concept, concept                                         in MAD.typeid
 
-local not_mappable, not_extendable, not_mutable in concept
+local not_mappable, not_extendable, not_mutable                    in concept
 
 -- implementation -------------------------------------------------------------o
 
@@ -665,9 +666,8 @@ end
 -- end ------------------------------------------------------------------------o
 return {
   operator  = wprotect(operator),
-  utility   = wprotect(utility ),
+  utility   = wprotect(utility),
   totable   = totable_,
   tostring  = tostring_,
   toboolean = toboolean,
-  -- __help    = require 'madh_gutil',
 }

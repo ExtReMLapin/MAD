@@ -7,7 +7,7 @@
  | Support: http://cern.ch/mad  - mad at cern.ch
  | Authors: L. Deniau, laurent.deniau at cern.ch
  |          A. Bloch , aurelien.bloch at cern.ch
- | Contrib: F.R. Leiro
+ | Contrib: F.R. Leiro, A.Z. Teska
  |
  o-----------------------------------------------------------------------------o
  | You can redistribute this file and/or modify it under the terms of the GNU
@@ -98,6 +98,7 @@ local function plot_unlock (folder)
   end
   os.remove(tmplock)
   filesys.unlock(lock)
+  lock:close()
 end
 
 -- clear the list of handle of non-existing file
@@ -304,7 +305,7 @@ end
 
 local function teardown_cmd (self, file, fname)
   local scrdump, output in self
-  file:flush()
+  file:close()
   if output ~= false then
     gplot:printf("load('%s')", fname)
     if is_string(scrdump)
@@ -351,6 +352,10 @@ end
 local function eShap (param, elem, dir)
   local kindcolor in param
   local shape        = dat[elem.kind]
+  if not shape then
+    error("element of kind: '" .. elem.kind
+                  .. "' doesn't have a corresponding shape")
+  end
   local el, dash, sh = shape.ellipse, shape.dashtype, shape.shape
   local color, style, linecolor
 
@@ -811,7 +816,7 @@ local function cmd_interpolate (param)
       cmd = cmd .. strinterp(cmdi, { id = i }, '=')
     end
   end
-  if is_table(plotvar) then intpol:set(plotvar) end
+  if is_table(plotvar) then intpol:setv(plotvar) end
   pwrite(cmd % intpol)
 end
 
@@ -981,7 +986,7 @@ local function exec (self)
   return self
 end
 
-local plot = command "Plot" {
+local plot = command "plot" {
 
   -- stream id
   sid         = 1,          -- 1 <= n <= 25
@@ -1101,7 +1106,6 @@ local plot = command "Plot" {
 
 -- end ------------------------------------------------------------------------o
 return {
-  plot   = plot,
-  gplot  = gplot,
-  -- __help = require 'madh_plot',
+  plot  = plot,
+  gplot = gplot,
 }

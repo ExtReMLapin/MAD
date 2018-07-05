@@ -37,14 +37,15 @@ local not_mappable, not_extendable, not_mutable                   in concept
 
 local abs, min, max, ceil in math
 
+local type = type
+
 -- root object ----------------------------------------------------------------o
 
--- hidden keys.
-local _data = {}
+local _data = {} -- hidden key
 
 local origin = string.format("MAD %s %s %s", env.version, env.os, env.arch)
 
-local mtable = object 'Mtable' {
+local mtable = object 'mtable' {
   title='', type='', origin=origin, kind='mtable',
   header={'title', 'type', 'origin', 'date', 'time', 'refcol'},
   column=nil, refcol=nil, novector=nil, owner=nil, reserve=8,
@@ -56,10 +57,9 @@ local mtable = object 'Mtable' {
 
 -- backup original methods and metamethods
 local mtable_mt = getmetatable(mtable)
-local var_raw, var_val = mtable.var_raw, mtable.var_val
-local raw_get, var_set = mtable.raw_get, mtable_mt.__newindex
-local parent, readonly = mtable.__par  , mtable.set_readonly
-local tbl_cpy = mtable.copy
+local var_raw, var_val, raw_get in mtable
+local tbl_cpy, var_set = mtable.copy, mtable_mt.__newindex
+local readonly = mtable.set_readonly
 
 local function is_mtable (a)
   return is_object(a) and var_raw(a, _data) ~= nil
@@ -419,7 +419,7 @@ end
 
 -- mtable metamethods ---------------------------------------------------------o
 
-local _slf, _idx, _col = {}, {}, {}
+local _slf, _idx, _col = {}, {}, {} -- hidden keys
 
 -- column generator (RO)
 local function gen_iter (s, i)
@@ -524,7 +524,7 @@ end
 -- read access precedence: row index, variable key, column key, row key.
 local function index_mm (tbl, key)
   -- row index
-  if is_integer(key) then              -- see index_of_idx
+  if type(key) == 'number' then                              -- see index_of_idx
     local data = var_raw(tbl,_data)
     key = reflect(key, data.nr)
     if key < 1 or key > data.nr then return nil end
@@ -637,12 +637,12 @@ local function range_of (tbl, rng_, ref_, dir_)
     stop , istop  = start, istart
   elseif is_string(rng_) then
     local s1, i2 = strsplit(rng_, "/" )
-    local s2 = i2 > 0 and strtrim(rng_, i2+1) or nil
+    local s2 = i2 == 0 and s1 or strtrim(rng_, i2+1)
     start, stop = s1, s2
   elseif is_range(rng_) then
     start, stop = rng_:ranges()
   elseif is_table(rng_) then
-    start, stop, ref_ = rng_[1], rng_[2], ref_ or rng_[3]
+    start, stop, ref_ = rng_[1], rng_[2] or rng_[1], ref_ or rng_[3]
   else error "invalid argument #2 (integer, string, table or range expected)"
   end
   if not is_number(rng_) then
@@ -756,6 +756,22 @@ local function set (tbl, row, col, val, cnt_)
     data[ci][ri] = val
     ins_idx(data, ri)
   end
+end
+
+--- cleaning -------------------------------o
+
+local function clr_dat (tbl)
+  assert(is_mtable(tbl), "invalid argument #1 (mtable expected)")
+  local data = var_raw(tbl,_data)
+  assert(not (data.ro or tbl:is_readonly()), "invalid write access to readonly mtable")
+  for i=1,data.nc-data.ng do
+    if is_table(data[i])
+    then table.clear(data[i])
+    else data[i]:zeros():_reshapeto(0)
+    end
+  end
+  data.nr = 0
+  return tbl
 end
 
 --- columns -------------------------------o
@@ -1486,7 +1502,7 @@ end
 
 -- members --------------------------------------------------------------------o
 
-mtable: set_methods {
+mtable :set_methods {
   -- nrow, ncol, ngen
   nrow         = len_mm,
   ncol         = \s -> var_raw(s, _data).nc,
@@ -1512,6 +1528,9 @@ mtable: set_methods {
   insrow       = ins_row,
   swprow       = swp_row,
 
+  -- clear all data, keep everything else
+  clrdat       = clr_dat,
+
   -- sequence-like methods
   name_of      = name_of,
   index_of     = index_of,
@@ -1523,11 +1542,11 @@ mtable: set_methods {
   deselect     = deselect,
   filter       = filter,
 
-  remove       = remove,
---replace      = replace, ??
-  insert       = insert,
   copy         = copy,
   sort         = sort,
+  insert       = insert,
+  remove       = remove,
+--replace      = replace, ??
 
   cycle        = cycle,
   iter         = iter,
@@ -1548,31 +1567,27 @@ mtable: set_methods {
   build_index  = build_index,
   check_index  = check_index,
 
-  -- disabled methods
+  -- disabled method
   is_selected := error("invalid mtable operation", 2),
 
-}: set_metamethods ({
+} :set_metamethods ({
   __add        = add_row,
   __len        = len_mm,
   __index      = index_mm,
   __newindex   = newindex_mm,
 -- __pairs     = pairs_mm , default from object
 -- __ipairs    = ipairs_mm, default from object
-
   __copy       = copy,
   __init       = mtbl_init,
 
-}, true): set_readonly()
+}, true) :set_readonly()
 
 -- env ------------------------------------------------------------------------o
 
 MAD.typeid.is_mtable = is_mtable
 
 -- end ------------------------------------------------------------------------o
-return {
-  mtable = mtable,
-  -- __help = require 'madh_mtable',
-}
+return { mtable = mtable }
 
 --[[ 'High level table access is very slow!
 code A:
